@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework import routers
 
 from .views import (AuthViewSet, CategoryViewSet, CommentViewSet, GenreViewSet,
-                    ReviewViewSet, TitleViewSet)
+                    ReviewViewSet, TitleViewSet, UserViewSet)
 
 v1_router = routers.SimpleRouter()
 
@@ -20,7 +20,7 @@ v1_router.register(
     basename='comments'
 )
 v1_router.register('auth', AuthViewSet, basename='auth')
-
+v1_router.register('users', UserViewSet, basename='users')
 
 
 urlpatterns = [
