@@ -1,39 +1,43 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
+from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 from reviews.models import Category, Comment, Genre, Review, Title
-
-# from rest_framework.validators import UniqueTogetherValidator
 
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с пользователями"""
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ('username', 'email', 'first_name', 'last_name',
+                  'bio', 'role')
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с категориями"""
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с жанрами"""
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с произведениями"""
     class Meta:
         model = Title
         fields = ('name', 'year', 'description', 'genre', 'category')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с отзывами"""
     author = serializers.SlugRelatedField(
         many=False,
         read_only=True,
@@ -47,6 +51,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с комментариями"""
     author = serializers.SlugRelatedField(
         many=False,
         read_only=True,
@@ -70,8 +75,9 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         """Не позволяет пользователю устанавливать имя 'me'."""
-        if value.lower() == 'me':
-            raise serializers.ValidationError("Имя пользователя не может быть 'me'.")
+        if value.lower() in NOT_ALLOWED_USERNAMES:
+            raise serializers.ValidationError(
+                f"Имя пользователя не может быть '{value.lower()}'")
         return value
 
     def validate(self, data):
@@ -82,14 +88,17 @@ class SignUpSerializer(serializers.ModelSerializer):
         user_by_email = User.objects.filter(email=email).first()
 
         if user_by_username and user_by_username.email != email:
-            raise serializers.ValidationError({"username": "Этот username уже занят другим пользователем."})
+            raise serializers.ValidationError(
+                {"username": "Этот username уже занят другим пользователем."})
         if user_by_email and user_by_email.username != username:
-            raise serializers.ValidationError({"email": "Этот email уже существует."})
+            raise serializers.ValidationError({"email":
+                                               "Этот email уже существует."})
 
         return data
 
     def create(self, validated_data):
-        """Создает нового или возвращает существующего пользователя (без пароля)."""
+        """Создает нового или возвращает
+        существующего пользователя (без пароля)."""
         user, _ = User.objects.get_or_create(
             username=validated_data['username'],
             defaults={'email': validated_data['email']}

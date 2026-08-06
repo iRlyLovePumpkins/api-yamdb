@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
     Администратор или суперпользователь имеют полный доступ.
@@ -9,24 +10,30 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return (
-            request.user.is_authenticated and 
-            (request.user.is_superuser or request.user.is_staff or request.user.role == 'admin')
+            request.user.is_authenticated
+            and (request.user.is_superuser or request.user.is_staff
+                 or request.user.role == 'admin')
         )
 
+
 class IsAdmin(permissions.BasePermission):
-    """Разрешает доступ только администраторам, суперпользователям или персоналу."""
+    """Разрешает доступ только администраторам,
+    суперпользователям или персоналу."""
     def has_permission(self, request, view):
         return (
-            request.user.is_authenticated and 
-            (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', None) == 'admin')
+            request.user.is_authenticated
+            and (request.user.is_superuser or request.user.is_staff
+                 or getattr(request.user, 'role', None) == 'admin')
         )
+
 
 class IsAuthorOrModeratorOrAdmin(permissions.BasePermission):
     """
     Права на редактирование/удаление отзывов и комментариев:
     - Чтение доступно всем (безопасные методы).
     - Создание доступно любому аутентифицированному пользователю.
-    - Изменение/удаление: Автор, Модератор, Администратор или Суперпользователь.
+    - Изменение/удаление: Автор, Модератор,
+    Администраторили Суперпользователь.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -38,11 +45,11 @@ class IsAuthorOrModeratorOrAdmin(permissions.BasePermission):
             return True
         if not request.user.is_authenticated:
             return False
-            
+
         return (
-            request.user.is_superuser or
-            request.user.is_staff or
-            request.user.role == 'admin' or
-            request.user.role == 'moderator' or
-            obj.author == request.user
+            request.user.is_superuser
+            or request.user.is_staff
+            or request.user.role == 'admin'
+            or request.user.role == 'moderator'
+            or obj.author == request.user
         )

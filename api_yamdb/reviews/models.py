@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractUser
-
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -21,8 +20,7 @@ class CustomUser(AbstractUser):
         blank=True,
         max_length=20,
         choices=ROLE_CHOICES,
-        default=USER
-        )
+        default=USER)
     email = models.EmailField(unique=True, blank=False, null=False)
 
     @property
