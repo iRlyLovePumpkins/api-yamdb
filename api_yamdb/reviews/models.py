@@ -1,12 +1,35 @@
 from django.contrib.auth.models import AbstractUser
-
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
 class CustomUser(AbstractUser):
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+
+    ROLE_CHOICES = [
+        (USER, 'User'),
+        (MODERATOR, 'Moderator'),
+        (ADMIN, 'Admin'),
+    ]
+
     bio = models.TextField('Биография', blank=True)
-    role = models.TextField('Роль', blank=True)
+    role = models.CharField(
+        'Роль',
+        blank=True,
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default=USER)
+    email = models.EmailField(unique=True, blank=False, null=False)
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN or self.is_superuser or self.is_staff
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
 
 
 class Genre(models.Model):
