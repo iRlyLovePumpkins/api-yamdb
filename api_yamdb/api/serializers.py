@@ -1,5 +1,8 @@
+import re
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
 from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 from reviews.models import Category, Comment, Genre, Review, Title
 
@@ -94,9 +97,16 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         """Не позволяет пользователю устанавливать имя 'me'."""
+        pattern = r'^[\w.@+-]+\Z'
+
         if value.lower() in NOT_ALLOWED_USERNAMES:
             raise serializers.ValidationError(
                 f"Имя пользователя не может быть '{value.lower()}'")
+
+        if not re.match(pattern, value):
+            raise serializers.ValidationError(
+                'Username может содержать только буквы, цифры и символы'
+            )
         return value
 
     def validate(self, data):
