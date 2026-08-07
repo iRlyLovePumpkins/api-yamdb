@@ -47,7 +47,8 @@ class TitleAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text_preview', 'title', 'author', 'score', 'pub_date')
+    list_display = ('id', 'text_preview', 'title',
+                    'author', 'score', 'pub_date')
     list_filter = ('score', 'pub_date')
     search_fields = ('text', 'author__username', 'title__name')
     date_hierarchy = 'pub_date'

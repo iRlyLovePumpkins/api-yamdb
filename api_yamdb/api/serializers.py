@@ -50,7 +50,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category', 'rating')
+        fields = ('id', 'name', 'year', 'description',
+                  'genre', 'category', 'rating')
         read_only_fields = ('rating',)
 
     def to_representation(self, instance):

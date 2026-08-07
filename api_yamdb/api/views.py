@@ -18,6 +18,8 @@ from .serializers import (CategorySerializer, CommentSerializer,
 
 User = get_user_model()
 
+ALLOWED_METHODS = ('get', 'post', 'patch', 'delete', 'head', 'options')
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с пользователями"""
@@ -27,7 +29,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (IsAdmin,)
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def get_permissions(self):
         if self.action == 'me':
@@ -65,7 +67,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAuthorOrModeratorOrAdmin,)
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
@@ -79,7 +81,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAuthorOrModeratorOrAdmin,)
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def get_review(self):
         return get_object_or_404(Review,
@@ -100,7 +102,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed(self.request.method)
@@ -117,7 +119,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed(self.request.method)
@@ -134,7 +136,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ('category', 'genre', 'name', 'year')
     lookup_field = 'id'
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ALLOWED_METHODS
 
     def get_queryset(self):
         queryset = super().get_queryset()
