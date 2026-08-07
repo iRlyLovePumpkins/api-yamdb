@@ -46,12 +46,14 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
-        
+
         serializer = self.get_serializer(
             request.user, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
-        if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', None) == 'admin'):
+        if not (request.user.is_superuser
+                or request.user.is_staff
+                or getattr(request.user, 'role', None) == 'admin'):
             serializer.validated_data.pop('role', None)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -101,7 +103,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def retrieve(self, request, *args, **kwargs):
-            raise MethodNotAllowed(self.request.method)
+        raise MethodNotAllowed(self.request.method)
 
     def update(self, request, *args, **kwargs):
         raise MethodNotAllowed(self.request.method)
@@ -118,7 +120,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def retrieve(self, request, *args, **kwargs):
-            raise MethodNotAllowed(self.request.method)
+        raise MethodNotAllowed(self.request.method)
 
     def update(self, request, *args, **kwargs):
         raise MethodNotAllowed(self.request.method)
@@ -136,7 +138,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         category_slug = self.request.query_params.get('category')
         genre_slug = self.request.query_params.get('genre')
         name = self.request.query_params.get('name')
@@ -150,7 +152,7 @@ class TitleViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name__icontains=name)
         if year is not None:
             queryset = queryset.filter(year=year)
-            
+
         return queryset
 
 
