@@ -46,12 +46,12 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         many=True
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('name', 'year', 'description', 'genre', 'category', 'rating')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category', 'rating')
         read_only_fields = ('rating',)
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
