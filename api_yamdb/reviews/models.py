@@ -57,6 +57,7 @@ class Title(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name='titles')
 
+
     def __str__(self):
         return self.name
 
@@ -72,7 +73,7 @@ class Review(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        unique_together = ('title', 'author')
+        unique_together = ('title', 'author', )
 
     def __str__(self):
         return self.text

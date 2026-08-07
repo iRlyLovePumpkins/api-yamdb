@@ -31,9 +31,26 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с произведениями"""
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+    
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
     class Meta:
         model = Title
-        fields = ('name', 'year', 'description', 'genre', 'category')
+        fields = ('id' ,'name', 'year', 'description', 'genre', 'category')
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['category'] = CategorySerializer(instance.category).data
+        representation['genre'] = GenreSerializer(instance.genre.all(), many=True).data
+        return representation
+
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -48,6 +65,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         # read_only_fields = ('author',)
+    
+    def validate(self, attrs):
+        user = self.context['request'].user
+        title = self.context['view'].kwargs.get('title_id')
+        if Review.objects.filter()
+
+    
 
 
 class CommentSerializer(serializers.ModelSerializer):
