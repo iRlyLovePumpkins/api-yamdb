@@ -2,10 +2,9 @@ import re
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 from reviews.models import Category, Comment, Genre, Review, Title
 
+from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 
 User = get_user_model()
 

@@ -5,13 +5,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
-                                        IsAuthenticated, AllowAny)
 from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Comment, Genre, Review, Title
 
-from reviews.models import Category, Genre, Review, Title, Comment
-from .permissions import IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin, IsAdmin
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer, SignUpSerializer,
                           TitleSerializer, TokenSerializer, UserSerializer)

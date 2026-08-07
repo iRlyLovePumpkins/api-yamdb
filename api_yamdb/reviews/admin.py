@@ -1,7 +1,8 @@
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
 from django.utils import timezone
-from .models import Category, Genre, Title, Review, Comment, CustomUser
+
+from .models import Category, Comment, CustomUser, Genre, Review, Title
 
 
 @admin.register(Category)
