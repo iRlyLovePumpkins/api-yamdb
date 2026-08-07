@@ -36,10 +36,30 @@ class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с произведениями"""
     rating = serializers.SerializerMethodField()
 
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
+
     class Meta:
         model = Title
         fields = ('name', 'year', 'description', 'genre', 'category', 'rating')
         read_only_fields = ('rating',)
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['category'] = CategorySerializer(
+            instance.category).data
+        representation['genre'] = GenreSerializer(
+            instance.genre.all(), many=True).data
+        return representation
 
 
 class ReviewSerializer(serializers.ModelSerializer):
