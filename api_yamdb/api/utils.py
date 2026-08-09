@@ -1,6 +1,9 @@
 import re
+
 from rest_framework import serializers
+
 from api_yamdb.settings import NOT_ALLOWED_USERNAMES
+
 
 def validate_username_field(value):
     """Не позволяет пользователю устанавливать имя 'me'."""
@@ -18,7 +21,10 @@ def validate_username_field(value):
 
 
 def is_admin(user):
-    """Проверяет, является ли пользователь администратором, стаффом или суперпользователем."""
+    """
+    Проверяет, является ли пользователь администратором,
+    стаффом или суперпользователем.
+    """
     if not user or not user.is_authenticated:
         return False
     return (

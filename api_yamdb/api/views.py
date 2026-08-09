@@ -37,7 +37,6 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdmin()]
 
-
     @action(
         detail=False,
         methods=['get', 'patch', 'delete', 'put'],
