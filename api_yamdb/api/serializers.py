@@ -3,9 +3,9 @@ import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
-
+from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 from django.db.models import Avg
-
+from .utils import validate_username_field
 
 User = get_user_model()
 
@@ -16,6 +16,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name',
                   'bio', 'role')
+
+    def validate_username(self, value):
+        """Не позволяет пользователю устанавливать имя 'me'."""
+        return validate_username_field(value)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -35,11 +39,11 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с произведениями"""
     rating = serializers.SerializerMethodField()
-    
+
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
-        queryset=Genre.objects.all()
+        queryset=Genre.objects.all(),
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -114,32 +118,25 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('email', 'username',)
 
     def validate_username(self, value):
-        """Не позволяет пользователю устанавливать имя 'me'."""
-        pattern = r'^[\w.@+-]+\Z'
-
-        if value.lower() in NOT_ALLOWED_USERNAMES:
-            raise serializers.ValidationError(
-                f"Имя пользователя не может быть '{value.lower()}'")
-
-        if not re.match(pattern, value):
-            raise serializers.ValidationError(
-                'Username может содержать только буквы, цифры и символы'
-            )
-        return value
+        return validate_username_field(value)
 
     def validate(self, data):
         username = data.get('username')
         email = data.get('email')
 
+        errors = {}
+
         user_by_username = User.objects.filter(username=username).first()
         user_by_email = User.objects.filter(email=email).first()
 
         if user_by_username and user_by_username.email != email:
-            raise serializers.ValidationError(
-                {"username": "Этот username уже занят другим пользователем."})
+            errors["username"] = ["Этот username уже занят другим пользователем."]
+
         if user_by_email and user_by_email.username != username:
-            raise serializers.ValidationError({"email":
-                                               "Этот email уже существует."})
+            errors["email"] = ["Этот email уже существует."]
+
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return data
 

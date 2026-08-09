@@ -15,6 +15,7 @@ from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer, SignUpSerializer,
                           TitleSerializer, TokenSerializer, UserSerializer)
+from .utils import is_admin
 
 User = get_user_model()
 
@@ -36,6 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdmin()]
 
+
     @action(
         detail=False,
         methods=['get', 'patch', 'delete', 'put'],
@@ -53,9 +55,7 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
-        if not (request.user.is_superuser
-                or request.user.is_staff
-                or getattr(request.user, 'role', None) == 'admin'):
+        if not is_admin(request.user):
             serializer.validated_data.pop('role', None)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
