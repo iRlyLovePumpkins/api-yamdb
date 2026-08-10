@@ -21,7 +21,7 @@ class Command(BaseCommand):
             file_path = os.path.join(data_dir, filename)
             if not os.path.exists(file_path):
                 self.stdout.write(
-                    self.style.WARNING(f'Файл {filename} не найден, пропускаем...')
+                    self.style.WARNING(f'Файл {filename} не найден')
                 )
                 continue
 
