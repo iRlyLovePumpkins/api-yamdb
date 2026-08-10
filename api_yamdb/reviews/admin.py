@@ -1,7 +1,8 @@
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
 from django.utils import timezone
-from .models import Category, Genre, Title, Review, Comment, CustomUser
+
+from .models import Category, Comment, CustomUser, Genre, Review, Title
 
 
 @admin.register(Category)
@@ -47,7 +48,8 @@ class TitleAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text_preview', 'title', 'author', 'score', 'pub_date')
+    list_display = ('id', 'text_preview', 'title',
+                    'author', 'score', 'pub_date')
     list_filter = ('score', 'pub_date')
     search_fields = ('text', 'author__username', 'title__name')
     date_hierarchy = 'pub_date'
