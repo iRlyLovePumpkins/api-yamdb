@@ -10,8 +10,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         data_dir = os.path.join(settings.BASE_DIR, 'static', 'data')
-        print('DEBUG PATH:', data_dir)
-        print('Does path exist?', os.path.exists(data_dir))
 
         simple_files = [
             ('users.csv', CustomUser),
