@@ -6,7 +6,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -42,20 +41,12 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin,)
     http_method_names = ALLOWED_METHODS
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return [IsAuthenticated()]
-        return [IsAdmin()]
-
     @action(
         detail=False,
-        methods=('get', 'patch', 'delete', 'put'),
+        methods=('get', 'patch'),
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        if request.method in ['DELETE', 'PUT']:
-            raise MethodNotAllowed(request.method)
-
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
