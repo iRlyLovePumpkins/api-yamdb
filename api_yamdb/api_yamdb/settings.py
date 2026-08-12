@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'api',
     'rest_framework',
     'djoser',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -127,3 +128,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'admin@yamdb.local'
 
 NOT_ALLOWED_USERNAMES = ('me',)
+
+ADMIN_EMAIL = 'admin@yamdb.local'

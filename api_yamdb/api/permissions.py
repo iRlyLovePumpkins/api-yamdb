@@ -1,7 +1,16 @@
 from rest_framework import permissions
+from reviews.models import MODERATOR
+from .utils import is_admin
 
 
-class IsAdminOrReadOnly(permissions.BasePermission):
+class IsAdmin(permissions.BasePermission):
+    """Разрешает доступ только администраторам,
+    суперпользователям или персоналу."""
+    def has_permission(self, request, view):
+        return is_admin(request.user)
+
+
+class IsAdminOrReadOnly(IsAdmin):
     """
     Администратор или суперпользователь имеют полный доступ.
     Остальные (включая анонимов) — только чтение (GET, HEAD, OPTIONS).
@@ -9,25 +18,10 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return (
-            request.user.is_authenticated
-            and (request.user.is_superuser or request.user.is_staff
-                 or request.user.role == 'admin')
-        )
+        return super().has_permission(request, view)
 
 
-class IsAdmin(permissions.BasePermission):
-    """Разрешает доступ только администраторам,
-    суперпользователям или персоналу."""
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and (request.user.is_superuser or request.user.is_staff
-                 or getattr(request.user, 'role', None) == 'admin')
-        )
-
-
-class IsAuthorOrModeratorOrAdmin(permissions.BasePermission):
+class IsAuthorOrModeratorOrAdmin(IsAdmin):
     """
     Права на редактирование/удаление отзывов и комментариев:
     - Чтение доступно всем (безопасные методы).
@@ -47,9 +41,7 @@ class IsAuthorOrModeratorOrAdmin(permissions.BasePermission):
             return False
 
         return (
-            request.user.is_superuser
-            or request.user.is_staff
-            or request.user.role == 'admin'
-            or request.user.role == 'moderator'
-            or obj.author == request.user
+            obj.author == request.user
+            or request.user.role == MODERATOR
+            or super().has_permission(request, view)
         )
