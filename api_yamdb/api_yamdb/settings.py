@@ -124,7 +124,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+MAILERS = {
+    'default': {
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+    }
+}
 DEFAULT_FROM_EMAIL = 'admin@yamdb.local'
 
 NOT_ALLOWED_USERNAMES = ('me',)
