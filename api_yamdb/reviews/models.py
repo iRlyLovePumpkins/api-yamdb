@@ -2,18 +2,18 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+USER = 'user'
+MODERATOR = 'moderator'
+ADMIN = 'admin'
+
+ROLE_CHOICES = [
+    (USER, 'User'),
+    (MODERATOR, 'Moderator'),
+    (ADMIN, 'Admin'),
+]
+
 
 class CustomUser(AbstractUser):
-    USER = 'user'
-    MODERATOR = 'moderator'
-    ADMIN = 'admin'
-
-    ROLE_CHOICES = [
-        (USER, 'User'),
-        (MODERATOR, 'Moderator'),
-        (ADMIN, 'Admin'),
-    ]
-
     bio = models.TextField('Биография', blank=True)
     role = models.CharField(
         'Роль',
