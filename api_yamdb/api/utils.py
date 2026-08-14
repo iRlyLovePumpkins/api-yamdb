@@ -3,6 +3,9 @@ import re
 from rest_framework import serializers
 
 from api_yamdb.settings import NOT_ALLOWED_USERNAMES
+from reviews.models import ADMIN
+
+ALLOWED_METHODS = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
 
 def validate_username_field(value):
@@ -30,5 +33,5 @@ def is_admin(user):
     return (
         user.is_superuser
         or user.is_staff
-        or getattr(user, 'role', None) == 'admin'
+        or user.role == ADMIN
     )

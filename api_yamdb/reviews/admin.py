@@ -4,6 +4,10 @@ from django.utils import timezone
 
 from .models import Category, Comment, CustomUser, Genre, Review, Title
 
+PREVIEW_TEXT_LENGTH = 50
+PREVIEW_SUFFIX = '...'
+ITEMS_PER_PAGE = 20
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -18,7 +22,7 @@ class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_display = ('name', 'slug')
 
-
+ 
 class TitleAdminForm(forms.ModelForm):
     class Meta:
         model = Title
@@ -39,25 +43,28 @@ class TitleAdmin(admin.ModelAdmin):
     list_editable = ('category',)
     list_filter = ('year', 'category', 'genre')
     search_fields = ('name', 'description')
-    list_per_page = 20
+    list_per_page = ITEMS_PER_PAGE
 
     @admin.display(description='Жанры')
     def get_genres(self, obj):
-        return ", ".join([genre.name for genre in obj.genre.all()])
+        """Возвращает строку с перечислением жанров произведения."""
+        genres = obj.genre.values_list('name', flat=True)
+        return ", ".join(genres)
 
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text_preview', 'title',
+    list_display = ('id', 'text_preview', 'title', 
                     'author', 'score', 'pub_date')
     list_filter = ('score', 'pub_date')
     search_fields = ('text', 'author__username', 'title__name')
     date_hierarchy = 'pub_date'
-    list_per_page = 20
+    list_per_page = ITEMS_PER_PAGE
 
     @admin.display(description='Текст')
     def text_preview(self, obj):
-        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+        """Возвращает превью текста отзыва."""
+        return _get_text_preview(obj.text)
 
 
 @admin.register(Comment)
@@ -66,11 +73,12 @@ class CommentAdmin(admin.ModelAdmin):
     list_filter = ('pub_date',)
     search_fields = ('text', 'author__username', 'review__text')
     date_hierarchy = 'pub_date'
-    list_per_page = 20
+    list_per_page = ITEMS_PER_PAGE
 
     @admin.display(description='Текст')
     def text_preview(self, obj):
-        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+        """Возвращает превью текста комментария."""
+        return _get_text_preview(obj.text)
 
 
 @admin.register(CustomUser)
@@ -79,3 +87,9 @@ class CustomUserAdmin(admin.ModelAdmin):
     list_filter = ('role', 'is_active', 'is_staff', 'is_superuser')
     search_fields = ('username', 'email')
     filter_horizontal = ('groups', 'user_permissions')
+
+
+def _get_text_preview(text, length=PREVIEW_TEXT_LENGTH, suffix=PREVIEW_SUFFIX):
+    if len(text) > length:
+        return text[:length] + suffix
+    return text

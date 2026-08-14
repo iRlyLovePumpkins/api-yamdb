@@ -1,25 +1,34 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from api_yamdb.settings import ADMIN_EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer, SignUpSerializer,
-                          TitleSerializer, TokenSerializer, UserSerializer)
-from .utils import is_admin
+from .filters import TitleFilter
+from .mixins import CatalogModelMixin, NestedModelMixin
+from .permissions import IsAdmin, IsAdminOrReadOnly
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    SignUpSerializer,
+    TitleSerializer,
+    TokenSerializer,
+    UserSerializer,
+)
+from .utils import ALLOWED_METHODS
 
 User = get_user_model()
-
-ALLOWED_METHODS = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -32,20 +41,12 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin,)
     http_method_names = ALLOWED_METHODS
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return [IsAuthenticated()]
-        return [IsAdmin()]
-
     @action(
         detail=False,
-        methods=['get', 'patch', 'delete', 'put'],
+        methods=('get', 'patch'),
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        if request.method in ['DELETE', 'PUT']:
-            raise MethodNotAllowed(request.method)
-
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
@@ -54,19 +55,14 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
-        if not is_admin(request.user):
-            serializer.validated_data.pop('role', None)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(NestedModelMixin, viewsets.ModelViewSet):
     """ViewSet для работы с отзывами"""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsAuthorOrModeratorOrAdmin,)
-    http_method_names = ALLOWED_METHODS
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
@@ -74,13 +70,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, title=title)
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(NestedModelMixin, viewsets.ModelViewSet):
     """ViewSet для работы с комментариями"""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsAuthorOrModeratorOrAdmin,)
-    http_method_names = ALLOWED_METHODS
 
     def get_review(self):
         return get_object_or_404(Review,
@@ -93,79 +86,43 @@ class CommentViewSet(viewsets.ModelViewSet):
         return self.get_review().comments.all()
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(CatalogModelMixin, viewsets.ModelViewSet):
     """ViewSet для работы с категориями"""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
-    http_method_names = ALLOWED_METHODS
-
-    def retrieve(self, request, *args, **kwargs):
-        raise MethodNotAllowed(self.request.method)
-
-    def update(self, request, *args, **kwargs):
-        raise MethodNotAllowed(self.request.method)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(CatalogModelMixin, viewsets.ModelViewSet):
     """ViewSet для работы с жанрами"""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
-    http_method_names = ALLOWED_METHODS
-
-    def retrieve(self, request, *args, **kwargs):
-        raise MethodNotAllowed(self.request.method)
-
-    def update(self, request, *args, **kwargs):
-        raise MethodNotAllowed(self.request.method)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с произведениями"""
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.OrderingFilter,)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+
+    filterset_class = TitleFilter
+
     ordering_fields = ('category', 'genre', 'name', 'year')
     lookup_field = 'id'
     http_method_names = ALLOWED_METHODS
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-
-        category_slug = self.request.query_params.get('category')
-        genre_slug = self.request.query_params.get('genre')
-        name = self.request.query_params.get('name')
-        year = self.request.query_params.get('year')
-
-        if category_slug is not None:
-            queryset = queryset.filter(category__slug=category_slug)
-        if genre_slug is not None:
-            queryset = queryset.filter(genre__slug=genre_slug)
-        if name is not None:
-            queryset = queryset.filter(name__icontains=name)
-        if year is not None:
-            queryset = queryset.filter(year=year)
-
-        return queryset
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        return queryset.distinct()
 
 
 class AuthViewSet(viewsets.GenericViewSet):
     """ViewSet для регистрации и получения токена через роутер."""
-    # Код с подтверждением будет в терминале
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
 
     @action(detail=False, methods=['post'], url_path='signup')
     def signup(self, request):
-        """Эндпоинт: /api/v1/auth/signup/"""
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -175,7 +132,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         send_mail(
             subject='Код подтверждения для YaMDB',
             message=f'Ваш код подтверждения: {confirmation_code}',
-            from_email='admin@yamdb.local',
+            from_email=ADMIN_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
         )
@@ -190,27 +147,11 @@ class AuthViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['post'], url_path='token')
     def token(self, request):
-        """Эндпоинт: /api/v1/auth/token/"""
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         username = serializer.validated_data['username']
-        confirmation_code = serializer.validated_data['confirmation_code']
-
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response(
-                {"detail": "Пользователь не найден."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        if not default_token_generator.check_token(user, confirmation_code):
-            return Response(
-                {"confirmation_code": "Неверный код подтверждения."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        user = User.objects.get(username=username)
         refresh = RefreshToken.for_user(user)
 
         return Response(

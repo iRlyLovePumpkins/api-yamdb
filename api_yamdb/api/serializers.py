@@ -1,7 +1,8 @@
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
-from django.db.models import Avg
-from rest_framework import serializers
-from reviews.models import Category, Comment, Genre, Review, Title
+from rest_framework import exceptions, serializers
+
+from reviews.models import ADMIN, Category, Comment, Genre, Review, Title
 
 from .utils import validate_username_field
 
@@ -19,12 +20,25 @@ class UserSerializer(serializers.ModelSerializer):
         """Не позволяет пользователю устанавливать имя 'me'."""
         return validate_username_field(value)
 
+    def get_extra_kwargs(self):
+        extra_kwargs = super().get_extra_kwargs()
+        request = self.context.get('request')
+
+        if request and not (
+            request.user.is_superuser
+            or request.user.is_staff
+            or getattr(request.user, 'role', None) == ADMIN
+        ):
+            extra_kwargs.setdefault('role', {})['read_only'] = True
+
+        return extra_kwargs
+
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для работы с категориями"""
     class Meta:
         model = Category
-        fields = ('name', 'slug')
+        exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -55,8 +69,8 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only_fields = ('rating',)
 
     def get_rating(self, obj):
-        rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return round(rating, 1) if rating else None
+        rating = getattr(obj, 'rating', None)
+        return round(rating, 1) if rating is not None else None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -108,7 +122,6 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        # read_only_fields = ('author', 'post')
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -159,3 +172,22 @@ class TokenSerializer(serializers.Serializer):
     """Сериализатор для получения JWT-токена."""
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
+
+    def validate(self, data):
+        try:
+            user = User.objects.get(username=data.get('username'))
+            confirmation_code = data.get('confirmation_code')
+            if not default_token_generator.check_token(
+                user, confirmation_code
+            ):
+                raise serializers.ValidationError(
+                    {"confirmation_code":
+                     "Неверный код подтверждения."},
+                    code=404
+                )
+        except User.DoesNotExist:
+            raise exceptions.NotFound(
+                {"detail": "Пользователь не найден."}
+            )
+
+        return data
