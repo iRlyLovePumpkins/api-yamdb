@@ -22,7 +22,7 @@ class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_display = ('name', 'slug')
 
- 
+
 class TitleAdminForm(forms.ModelForm):
     class Meta:
         model = Title
@@ -54,7 +54,7 @@ class TitleAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text_preview', 'title', 
+    list_display = ('id', 'text_preview', 'title',
                     'author', 'score', 'pub_date')
     list_filter = ('score', 'pub_date')
     search_fields = ('text', 'author__username', 'title__name')
