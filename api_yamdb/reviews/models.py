@@ -158,3 +158,4 @@ class Comment(BaseModelWithText):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+ 
