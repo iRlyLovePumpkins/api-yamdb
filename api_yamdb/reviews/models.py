@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils import timezone
+
+from api.validators import my_year_validator
 
 USER = 'user'
 MODERATOR = 'moderator'
@@ -14,26 +15,51 @@ ROLE_CHOICES = [
 ]
 
 
+class BaseModelWithName(models.Model):
+    name = models.CharField('Название', max_length=256)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.name
+
+
+class BaseModelWithText(models.Model):
+    text = models.TextField('Текст')
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.text[:50]
+
+
 class CustomUser(AbstractUser):
-    USER = USER
-    MODERATOR = MODERATOR
-    ADMIN = ADMIN
-
-    ROLE_CHOICES = ROLE_CHOICES
-
-    bio = models.TextField('Биография', blank=True)
+    bio = models.TextField(
+        'Биография',
+        blank=True)
     role = models.CharField(
         'Роль',
         blank=True,
         max_length=20,
         choices=ROLE_CHOICES,
-        default=USER
-    )
-    email = models.EmailField(unique=True, blank=False, null=False)
+        default=USER)
+    email = models.EmailField(
+        'Электронная почта',
+        unique=True,
+        blank=False,
+        null=False)
+
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
-        return self.role == self.ADMIN or self.is_superuser or self.is_staff
+        return (self.role == self.ADMIN
+                or self.is_superuser
+                or self.is_staff)
 
     @property
     def is_moderator(self):
@@ -43,108 +69,93 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class BaseSlugModel(models.Model):
-    """Абстрактная базовая модель для категорий и жанров."""
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True)
+class Genre(BaseModelWithName):
+    slug = models.SlugField(
+        'Идентификатор',
+        unique=True)
 
     class Meta:
-        abstract = True
-
-    def __str__(self):
-        return self.name
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
 
-class Genre(BaseSlugModel):
-    """Модель жанра."""
-    pass
+class Category(BaseModelWithName):
+    slug = models.SlugField(
+        'Идентификатор',
+        unique=True)
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
 
-class Category(BaseSlugModel):
-    """Модель категории."""
-    pass
-
-
-def validate_year(value):
-    """
-    Валидатор для проверки, что год не превышает текущий.
-    """
-    current_year = timezone.now().year
-    if value > current_year:
-        raise models.ValidationError(
-            f'Год не может быть больше {current_year}.'
-        )
-    return value
-
-
-class Title(models.Model):
-    """Модель произведения."""
-    name = models.CharField(max_length=256)
-    year = models.IntegerField(validators=[validate_year])
-    description = models.TextField(blank=True)
+class Title(BaseModelWithName):
+    year = models.IntegerField(
+        'Год выпуска',
+        validators=[my_year_validator])
+    description = models.TextField(
+        'Описание',
+        blank=True)
     genre = models.ManyToManyField(
         Genre,
-        related_name='titles'
-    )
+        related_name='titles',
+        verbose_name='Жанр')
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
-        related_name='titles'
-    )
+        related_name='titles',
+        verbose_name='Категория')
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
 
-class Review(models.Model):
-    """Модель отзыва."""
+class Review(BaseModelWithText):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
-    )
-    text = models.TextField()
+        related_name='reviews',
+        verbose_name='Произведение')
     score = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
-    )
+        'Оценка',
+        validators=[MinValueValidator(1), MaxValueValidator(10)])
     author = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='reviews'
-    )
-    pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
+        related_name='reviews',
+        verbose_name='Автор')
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True)
 
     class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
-                name='unique_review_for_user'
-            )
-        ]
-        ordering = ['-pub_date']
-
-    def __str__(self):
-        return f'Отзыв от {self.author.username} на {self.title.name}'
+                name='unique_title_author')]
 
 
-class Comment(models.Model):
-    """Модель комментария."""
+class Comment(BaseModelWithText):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
-    )
-    text = models.TextField()
+        related_name='comments',
+        verbose_name='Отзыв')
     author = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='comments'
-    )
-    pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
+        related_name='comments',
+        verbose_name='Автор')
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True)
 
     class Meta:
-        ordering = ['pub_date']
-
-    def __str__(self):
-        return f'Комментарий от {self.author.username} к отзыву {self.review.id}'
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
  
