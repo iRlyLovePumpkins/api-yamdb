@@ -1,6 +1,7 @@
 from rest_framework import permissions
-from reviews.models import MODERATOR
 from .utils import is_admin
+
+from api_yamdb.settings import MODERATOR
 
 
 class IsAdmin(permissions.BasePermission):
