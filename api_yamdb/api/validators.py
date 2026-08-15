@@ -3,7 +3,7 @@ import datetime
 from django.core.exceptions import ValidationError
 
 
-def my_year_validator(value):
+def year_validator(value):
     """Проверяет, что год не больше текущего года."""
     current_year = datetime.datetime.now().year
     if value > current_year:

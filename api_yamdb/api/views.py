@@ -10,9 +10,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api_yamdb.settings import ADMIN_EMAIL
+from api_yamdb.settings import ADMIN_EMAIL, ALLOWED_METHODS
 from reviews.models import Category, Comment, Genre, Review, Title
-
 from .filters import TitleFilter
 from .mixins import CatalogModelMixin, NestedModelMixin
 from .permissions import IsAdmin, IsAdminOrReadOnly
@@ -26,7 +25,6 @@ from .serializers import (
     TokenSerializer,
     UserSerializer,
 )
-from .utils import ALLOWED_METHODS
 
 User = get_user_model()
 

@@ -2,10 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from api_yamdb.settings import NOT_ALLOWED_USERNAMES
-from reviews.models import ADMIN
-
-ALLOWED_METHODS = ('get', 'post', 'patch', 'delete', 'head', 'options')
+from api_yamdb.settings import NOT_ALLOWED_USERNAMES, ADMIN
 
 
 def validate_username_field(value):

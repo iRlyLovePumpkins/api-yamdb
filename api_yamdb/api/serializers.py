@@ -2,9 +2,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
 from rest_framework import exceptions, serializers
 
-from reviews.models import ADMIN, Category, Comment, Genre, Review, Title
-
+from reviews.models import Category, Comment, Genre, Review, Title
 from .utils import validate_username_field
+from api_yamdb.settings import ADMIN
 
 User = get_user_model()
 
