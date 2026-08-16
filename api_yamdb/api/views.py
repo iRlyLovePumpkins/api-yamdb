@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db import models
 from django.db.models import Avg
+from django.db.models.functions import Cast, Round
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -98,20 +100,19 @@ class GenreViewSet(CatalogModelMixin, viewsets.ModelViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с произведениями"""
-    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    queryset = Title.objects.annotate(
+        rating=Cast(
+            Round(Avg('reviews__score')),
+            output_field=models.IntegerField(),
+        )
+    ).order_by('name')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
-
     filterset_class = TitleFilter
-
     ordering_fields = ('category', 'genre', 'name', 'year')
     lookup_field = 'id'
     http_method_names = ALLOWED_METHODS
-
-    def filter_queryset(self, queryset):
-        queryset = super().filter_queryset(queryset)
-        return queryset.distinct()
 
 
 class AuthViewSet(viewsets.GenericViewSet):
