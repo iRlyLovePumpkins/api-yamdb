@@ -2,37 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api.validators import my_year_validator
-
-USER = 'user'
-MODERATOR = 'moderator'
-ADMIN = 'admin'
-
-ROLE_CHOICES = [
-    (USER, 'User'),
-    (MODERATOR, 'Moderator'),
-    (ADMIN, 'Admin'),
-]
-
-
-class BaseModelWithName(models.Model):
-    name = models.CharField('Название', max_length=256)
-
-    class Meta:
-        abstract = True
-
-    def __str__(self):
-        return self.name
-
-
-class BaseModelWithText(models.Model):
-    text = models.TextField('Текст')
-
-    class Meta:
-        abstract = True
-
-    def __str__(self):
-        return self.text[:50]
+from api.mixins import BaseReviewModel, NameMixin, SlugMixin
+from api.validators import year_validator
+from api_yamdb.settings import USER, ROLE_CHOICES
 
 
 class CustomUser(AbstractUser):
@@ -69,30 +41,24 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class Genre(BaseModelWithName):
-    slug = models.SlugField(
-        'Идентификатор',
-        unique=True)
+class Genre(NameMixin, SlugMixin):
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
 
-class Category(BaseModelWithName):
-    slug = models.SlugField(
-        'Идентификатор',
-        unique=True)
+class Category(NameMixin, SlugMixin):
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Title(BaseModelWithName):
+class Title(NameMixin):
     year = models.IntegerField(
         'Год выпуска',
-        validators=[my_year_validator])
+        validators=[year_validator])
     description = models.TextField(
         'Описание',
         blank=True)
@@ -111,7 +77,7 @@ class Title(BaseModelWithName):
         verbose_name_plural = 'Произведения'
 
 
-class Review(BaseModelWithText):
+class Review(BaseReviewModel):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -120,15 +86,6 @@ class Review(BaseModelWithText):
     score = models.PositiveSmallIntegerField(
         'Оценка',
         validators=[MinValueValidator(1), MaxValueValidator(10)])
-    author = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='Автор')
-    pub_date = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True,
-        db_index=True)
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -139,21 +96,12 @@ class Review(BaseModelWithText):
                 name='unique_title_author')]
 
 
-class Comment(BaseModelWithText):
+class Comment(BaseReviewModel):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Отзыв')
-    author = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='Автор')
-    pub_date = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True,
-        db_index=True)
 
     class Meta:
         verbose_name = 'Комментарий'
