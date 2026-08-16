@@ -3,14 +3,20 @@ from django.contrib.auth import get_user_model
 from rest_framework import exceptions, serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
-from .utils import validate_username_field
-from api_yamdb.settings import ADMIN
+from .utils import is_admin, validate_username_field
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с пользователями"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and not is_admin(request.user):
+            if 'role' in self.fields:
+                self.fields['role'].read_only = True
+
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name',
@@ -19,19 +25,6 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         """Не позволяет пользователю устанавливать имя 'me'."""
         return validate_username_field(value)
-
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-        request = self.context.get('request')
-
-        if request and not (
-            request.user.is_superuser
-            or request.user.is_staff
-            or getattr(request.user, 'role', None) == ADMIN
-        ):
-            extra_kwargs.setdefault('role', {})['read_only'] = True
-
-        return extra_kwargs
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -45,13 +38,15 @@ class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с жанрами"""
     class Meta:
         model = Genre
-        fields = ('name', 'slug')
+        exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с произведениями"""
-    rating = serializers.SerializerMethodField()
-
+    rating = serializers.IntegerField(
+        read_only=True,
+        allow_null=True
+    )
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
@@ -67,10 +62,6 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year',
                   'description', 'genre', 'category', 'rating')
         read_only_fields = ('rating',)
-
-    def get_rating(self, obj):
-        rating = getattr(obj, 'rating', None)
-        return round(rating, 1) if rating is not None else None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -182,11 +173,12 @@ class TokenSerializer(serializers.Serializer):
             ):
                 raise serializers.ValidationError(
                     {"confirmation_code":
-                     "Неверный код подтверждения."},
-                    code=404
+                     "Неверный код подтверждения."}
                 )
         except User.DoesNotExist:
             raise exceptions.NotFound(
+                # ValidationError не проходит тесты.
+                # assert 400 == <HTTPStatus.NOT_FOUND: 404>.
                 {"detail": "Пользователь не найден."}
             )
 
