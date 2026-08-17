@@ -177,5 +177,4 @@ class TokenSerializer(serializers.Serializer):
                 {"confirmation_code": "Неверный код подтверждения."}
             )
 
-        data['user'] = user
         return data
