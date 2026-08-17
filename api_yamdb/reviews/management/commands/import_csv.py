@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 
 from reviews.models import Category, Comment, CustomUser, Genre, Review, Title
 
+
 class Command(BaseCommand):
     """Импорт данных из CSV-файлов в базу данных."""
 

@@ -6,6 +6,7 @@ from api_yamdb.settings import ALLOWED_METHODS
 
 from .permissions import IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin
 
+
 class CatalogModelMixin:
     """Миксин для категорий и жанров."""
     permission_classes = (IsAdminOrReadOnly,)
