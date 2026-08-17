@@ -146,3 +146,5 @@ DEFAULT_FROM_EMAIL = 'admin@yamdb.local'
 NOT_ALLOWED_USERNAMES = ('me',)
 
 ADMIN_EMAIL = 'admin@yamdb.local'
+
+MAX_TEXT_CHARS = 50

@@ -1,7 +1,6 @@
 from rest_framework import permissions
-from .utils import is_admin
 
-from api_yamdb.settings import MODERATOR
+from .utils import is_admin
 
 
 class IsAdmin(permissions.BasePermission):
@@ -9,6 +8,33 @@ class IsAdmin(permissions.BasePermission):
     суперпользователям или персоналу."""
     def has_permission(self, request, view):
         return is_admin(request.user)
+
+
+class IsAuthenticatedAndRoleProtected(permissions.BasePermission):
+    """
+    Разрешает доступ только аутентифицированным пользователям,
+    а также проверяет права администратора или суперпользователя
+    при попытке изменения поля 'role'.
+    """
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+
+        if 'role' in request.data:
+            if not (request.user.is_admin or request.user.is_superuser):
+                return False
+
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        if not (request.user and request.user.is_authenticated):
+            return False
+
+        if 'role' in request.data:
+            if not (request.user.is_admin or request.user.is_superuser):
+                return False
+
+        return True
 
 
 class IsAdminOrReadOnly(IsAdmin):
@@ -43,6 +69,6 @@ class IsAuthorOrModeratorOrAdmin(IsAdmin):
 
         return (
             obj.author == request.user
-            or request.user.role == MODERATOR
+            or request.user.is_moderator
             or super().has_permission(request, view)
         )

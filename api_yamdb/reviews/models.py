@@ -2,9 +2,59 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api.mixins import BaseReviewModel, NameMixin, SlugMixin
 from api.validators import year_validator
-from api_yamdb.settings import USER, ROLE_CHOICES
+from api_yamdb.settings import (
+    ADMIN,
+    MAX_TEXT_CHARS,
+    MODERATOR,
+    ROLE_CHOICES,
+    USER,
+)
+
+
+class SlugMixin(models.Model):
+    """Миксин для моделей с полем Slug"""
+    slug = models.SlugField(
+        'Идентификатор',
+        max_length=50,
+        unique=True,
+        db_index=True
+    )
+
+    class Meta:
+        abstract = True
+
+
+class NameMixin(models.Model):
+    """Миксин для моделей с полем name"""
+    name = models.CharField('Название', max_length=256)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.name
+
+
+class BaseReviewModel(models.Model):
+    """Абстрактная базовая модель для отзывов и комментов"""
+    text = models.TextField('Текст')
+
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True)
+
+    author = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        verbose_name='Автор')
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.text[:MAX_TEXT_CHARS]
 
 
 class CustomUser(AbstractUser):
@@ -29,13 +79,13 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return (self.role == self.ADMIN
+        return (self.role == ADMIN
                 or self.is_superuser
                 or self.is_staff)
 
     @property
     def is_moderator(self):
-        return self.role == self.MODERATOR
+        return self.role == MODERATOR
 
     def __str__(self):
         return self.username
