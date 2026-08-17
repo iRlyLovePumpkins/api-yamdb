@@ -1,22 +1,16 @@
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework import exceptions, serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
-from .utils import is_admin, validate_username_field
+
+from .utils import validate_username_field
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с пользователями"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and not is_admin(request.user):
-            if 'role' in self.fields:
-                self.fields['role'].read_only = True
-
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name',
@@ -165,21 +159,23 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(required=True)
 
     def validate(self, data):
-        try:
-            user = User.objects.get(username=data.get('username'))
-            confirmation_code = data.get('confirmation_code')
-            if not default_token_generator.check_token(
-                user, confirmation_code
-            ):
-                raise serializers.ValidationError(
-                    {"confirmation_code":
-                     "Неверный код подтверждения."}
-                )
-        except User.DoesNotExist:
-            raise exceptions.NotFound(
-                # ValidationError не проходит тесты.
-                # assert 400 == <HTTPStatus.NOT_FOUND: 404>.
-                {"detail": "Пользователь не найден."}
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+
+        if not username or not confirmation_code:
+            raise serializers.ValidationError(
+                "Поля 'username' и 'confirmation_code' "
+                "обязательны для заполнения."
             )
 
+        user = User.objects.filter(username=username).first()
+        if user is None:
+            raise exceptions.NotFound("Пользователь не найден.")
+
+        if not default_token_generator.check_token(user, confirmation_code):
+            raise serializers.ValidationError(
+                {"confirmation_code": "Неверный код подтверждения."}
+            )
+
+        data['user'] = user
         return data

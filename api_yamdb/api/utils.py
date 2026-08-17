@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from api_yamdb.settings import NOT_ALLOWED_USERNAMES, ADMIN
+from api_yamdb.settings import NOT_ALLOWED_USERNAMES
 
 
 def validate_username_field(value):
@@ -30,5 +30,5 @@ def is_admin(user):
     return (
         user.is_superuser
         or user.is_staff
-        or getattr(user, 'role', None) == ADMIN
+        or user.is_admin
     )

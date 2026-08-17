@@ -3,7 +3,13 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from api.validators import year_validator
-from api_yamdb.settings import USER, ROLE_CHOICES, MAX_TEXT_CHARS
+from api_yamdb.settings import (
+    ADMIN,
+    MAX_TEXT_CHARS,
+    MODERATOR,
+    ROLE_CHOICES,
+    USER,
+)
 
 
 class SlugMixin(models.Model):
@@ -73,13 +79,13 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return (self.role == self.ADMIN
+        return (self.role == ADMIN
                 or self.is_superuser
                 or self.is_staff)
 
     @property
     def is_moderator(self):
-        return self.role == self.MODERATOR
+        return self.role == MODERATOR
 
     def __str__(self):
         return self.username
