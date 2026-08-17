@@ -1,6 +1,6 @@
 from rest_framework import permissions
-from .utils import is_admin
 
+from .utils import is_admin
 from api_yamdb.settings import MODERATOR
 
 
