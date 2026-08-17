@@ -2,10 +2,9 @@ from rest_framework import filters
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from .permissions import (
-    IsAdminOrReadOnly,
-    IsAuthorOrModeratorOrAdmin)
 from api_yamdb.settings import ALLOWED_METHODS
+
+from .permissions import IsAdminOrReadOnly, IsAuthorOrModeratorOrAdmin
 
 
 class CatalogModelMixin:

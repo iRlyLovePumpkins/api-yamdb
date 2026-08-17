@@ -8,15 +8,20 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api_yamdb.settings import ADMIN_EMAIL, ALLOWED_METHODS
 from reviews.models import Category, Comment, Genre, Review, Title
+
 from .filters import TitleFilter
 from .mixins import CatalogModelMixin, NestedModelMixin
-from .permissions import IsAdmin, IsAdminOrReadOnly
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsAuthenticatedAndRoleProtected,
+)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -44,7 +49,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=('get', 'patch'),
-        permission_classes=[IsAuthenticated]
+        permission_classes=(IsAuthenticatedAndRoleProtected,)
     )
     def me(self, request):
         if request.method == 'GET':
