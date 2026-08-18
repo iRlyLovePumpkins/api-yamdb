@@ -14,7 +14,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from api_yamdb.settings import ADMIN_EMAIL, ALLOWED_METHODS
 from reviews.models import Category, Comment, Genre, Review, Title
-
 from .filters import TitleFilter
 from .mixins import CatalogModelMixin, NestedModelMixin
 from .permissions import (
