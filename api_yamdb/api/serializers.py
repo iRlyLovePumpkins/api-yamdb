@@ -3,7 +3,6 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework import exceptions, serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
-
 from .utils import validate_username_field
 
 User = get_user_model()
